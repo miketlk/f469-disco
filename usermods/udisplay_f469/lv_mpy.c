@@ -25789,6 +25789,46 @@ static const mp_lv_struct_t mp_font_roboto_mono_28 = {
     (lv_font_t*)&font_roboto_mono_28
 };
     
+
+/*
+ * lvgl montserrat_12_de global definitions
+ */
+
+static const mp_lv_struct_t mp_montserrat_12_de = {
+    { &mp_lv_font_t_type },
+    (lv_font_t*)&montserrat_12_de
+};
+    
+
+/*
+ * lvgl montserrat_16_de global definitions
+ */
+
+static const mp_lv_struct_t mp_montserrat_16_de = {
+    { &mp_lv_font_t_type },
+    (lv_font_t*)&montserrat_16_de
+};
+    
+
+/*
+ * lvgl montserrat_22_de global definitions
+ */
+
+static const mp_lv_struct_t mp_montserrat_22_de = {
+    { &mp_lv_font_t_type },
+    (lv_font_t*)&montserrat_22_de
+};
+    
+
+/*
+ * lvgl montserrat_28_de global definitions
+ */
+
+static const mp_lv_struct_t mp_montserrat_28_de = {
+    { &mp_lv_font_t_type },
+    (lv_font_t*)&montserrat_28_de
+};
+    
 /* Global struct wrapper for int */
 
 typedef struct {
@@ -46923,6 +46963,10 @@ static const mp_rom_map_elem_t lvgl_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_font_roboto_mono_16), MP_ROM_PTR(&mp_font_roboto_mono_16) },
     { MP_ROM_QSTR(MP_QSTR_font_roboto_mono_22), MP_ROM_PTR(&mp_font_roboto_mono_22) },
     { MP_ROM_QSTR(MP_QSTR_font_roboto_mono_28), MP_ROM_PTR(&mp_font_roboto_mono_28) },
+    { MP_ROM_QSTR(MP_QSTR_montserrat_12_de), MP_ROM_PTR(&mp_montserrat_12_de) },
+    { MP_ROM_QSTR(MP_QSTR_montserrat_16_de), MP_ROM_PTR(&mp_montserrat_16_de) },
+    { MP_ROM_QSTR(MP_QSTR_montserrat_22_de), MP_ROM_PTR(&mp_montserrat_22_de) },
+    { MP_ROM_QSTR(MP_QSTR_montserrat_28_de), MP_ROM_PTR(&mp_montserrat_28_de) },
     { MP_ROM_QSTR(MP_QSTR_style_const_prop_id_inv), MP_ROM_PTR(&mp_lv_style_const_prop_id_inv) },
     { MP_ROM_QSTR(MP_QSTR_obj_class), MP_ROM_PTR(&mp_lv_obj_class) },
     { MP_ROM_QSTR(MP_QSTR_binfont_font_class), MP_ROM_PTR(&mp_lv_binfont_font_class) },

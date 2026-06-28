@@ -45,6 +45,11 @@ SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/font_roboto_mono_28.c
 SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/font_roboto_mono_22.c
 SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/font_roboto_mono_16.c
 SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/font_roboto_mono_12.c
+# montserrat with German umlauts
+SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/montserrat_28_de.c
+SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/montserrat_22_de.c
+SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/montserrat_16_de.c
+SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/montserrat_12_de.c
 
 # Dirs with header files
 CFLAGS_USERMOD += -I$(DISPLAY_MOD_DIR)
@@ -76,6 +81,11 @@ SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/font_roboto_mono_28.c
 SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/font_roboto_mono_22.c
 SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/font_roboto_mono_16.c
 SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/font_roboto_mono_12.c
+# montserrat with German umlauts
+SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/montserrat_28_de.c
+SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/montserrat_22_de.c
+SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/montserrat_16_de.c
+SRC_USERMOD += $(DISPLAY_MOD_DIR)/fonts/montserrat_12_de.c
 
 # Dirs with header files
 CFLAGS_USERMOD += -I$(DISPLAY_MOD_DIR)

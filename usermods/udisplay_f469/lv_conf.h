@@ -481,7 +481,11 @@ extern void mp_lv_deinit_gc();
 							   LV_FONT_DECLARE(font_roboto_mono_12) \
 							   LV_FONT_DECLARE(font_roboto_mono_16) \
 							   LV_FONT_DECLARE(font_roboto_mono_22) \
-							   LV_FONT_DECLARE(font_roboto_mono_28)
+							   LV_FONT_DECLARE(font_roboto_mono_28) \
+							   LV_FONT_DECLARE(montserrat_12_de) \
+							   LV_FONT_DECLARE(montserrat_16_de) \
+							   LV_FONT_DECLARE(montserrat_22_de) \
+							   LV_FONT_DECLARE(montserrat_28_de)
 
 /*Always set a default font*/
 #define LV_FONT_DEFAULT &font_roboto_mono_16
