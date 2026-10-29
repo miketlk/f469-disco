@@ -513,6 +513,33 @@ void BSP_LCD_LayerDefaultInit(uint16_t LayerIndex, uint32_t FB_Address)
   DrawProp[LayerIndex].TextColor = LCD_COLOR_BLACK;
 }
 
+void BSP_LCD_LayerRgb565Init(uint16_t LayerIndex, uint32_t FB_Address)
+{
+  LCD_LayerCfgTypeDef Layercfg;
+
+  Layercfg.WindowX0 = 0;
+  Layercfg.WindowX1 = BSP_LCD_GetXSize();
+  Layercfg.WindowY0 = 0;
+  Layercfg.WindowY1 = BSP_LCD_GetYSize();
+  Layercfg.PixelFormat = LTDC_PIXEL_FORMAT_RGB565;
+  Layercfg.FBStartAdress = FB_Address;
+  Layercfg.Alpha = 255;
+  Layercfg.Alpha0 = 0;
+  Layercfg.Backcolor.Blue = 0;
+  Layercfg.Backcolor.Green = 0;
+  Layercfg.Backcolor.Red = 0;
+  Layercfg.BlendingFactor1 = LTDC_BLENDING_FACTOR1_PAxCA;
+  Layercfg.BlendingFactor2 = LTDC_BLENDING_FACTOR2_PAxCA;
+  Layercfg.ImageWidth = BSP_LCD_GetXSize();
+  Layercfg.ImageHeight = BSP_LCD_GetYSize();
+
+  HAL_LTDC_ConfigLayer(&hltdc_eval, &Layercfg, LayerIndex);
+
+  DrawProp[LayerIndex].BackColor = LCD_COLOR_WHITE;
+  DrawProp[LayerIndex].pFont = &Font24;
+  DrawProp[LayerIndex].TextColor = LCD_COLOR_BLACK;
+}
+
 
 /**
   * @brief  Selects the LCD Layer.
@@ -1717,9 +1744,143 @@ uint8_t BSP_LCD_DrawBitmapRaw(uint32_t Xpos, uint32_t Ypos, uint32_t Width, uint
   return LCD_OK;
 }
 
-/**
-  * @}
-  */
+uint8_t BSP_LCD_DrawBitmapRaw_IT_To(uint32_t FbBase,
+                                    uint32_t Xpos, uint32_t Ypos,
+                                    uint32_t Width, uint32_t Height,
+                                    uint32_t ColorBits, const void *pPixelData,
+                                    uint32_t SrcPitchPx)
+{
+  uint32_t Address;
+  uint32_t InputColorMode = 0;
+
+  /* Validate parameters */
+  if( !FbBase || !Width || !Height || !ColorBits || !pPixelData ||
+      Xpos + Width > BSP_LCD_GetXSize() || Ypos + Height > BSP_LCD_GetYSize() )
+  {
+    return LCD_ERROR;
+  }
+
+  /* Determine input color mode + alignment check */
+  if (ColorBits == 32)
+  {
+    InputColorMode = CM_ARGB8888;
+    if((uint32_t)pPixelData & 0x3) return LCD_ERROR;
+  }
+  else if (ColorBits == 16)
+  {
+    InputColorMode = CM_RGB565;
+    if((uint32_t)pPixelData & 0x1) return LCD_ERROR;
+  }
+  else if (ColorBits == 24)
+  {
+    InputColorMode = CM_RGB888;
+    if((uint32_t)pPixelData & 0x3) return LCD_ERROR;
+  }
+  else return LCD_ERROR;
+
+  /* Destination address in the requested framebuffer (ARGB8888 / 4 bpp) */
+  Address = FbBase + (((BSP_LCD_GetXSize() * Ypos) + Xpos) * 4);
+
+  /* Configure DMA2D: 2D transfer, source contiguous, destination has stride */
+  hdma2d_eval.Instance              = DMA2D;
+  hdma2d_eval.Init.Mode             = DMA2D_M2M_PFC;
+  hdma2d_eval.Init.ColorMode        = DMA2D_ARGB8888;
+  hdma2d_eval.Init.OutputOffset     = BSP_LCD_GetXSize() - Width; /* dst stride - width */
+
+  hdma2d_eval.LayerCfg[1].AlphaMode      = DMA2D_NO_MODIF_ALPHA;
+  hdma2d_eval.LayerCfg[1].InputAlpha     = 0xFF;
+  hdma2d_eval.LayerCfg[1].InputColorMode = InputColorMode;
+  /* SrcPitchPx == 0 means rows are tightly packed (pitch = Width). */
+  {
+    uint32_t pitch = (SrcPitchPx == 0) ? Width : SrcPitchPx;
+    if (pitch < Width) return LCD_ERROR;
+    hdma2d_eval.LayerCfg[1].InputOffset = pitch - Width;
+  }
+
+  if (HAL_DMA2D_Init(&hdma2d_eval) != HAL_OK)       return LCD_ERROR;
+  if (HAL_DMA2D_ConfigLayer(&hdma2d_eval, 1) != HAL_OK) return LCD_ERROR;
+
+  /* Single 2D transfer: xSize=Width, ySize=Height */
+  if (HAL_DMA2D_Start_IT(&hdma2d_eval, (uint32_t)pPixelData, Address, Width, Height) != HAL_OK)
+  {
+    return LCD_ERROR;
+  }
+
+  return LCD_OK;
+}
+
+static uint8_t BSP_LCD_CopyRectExMode(uint32_t SrcFb,
+                                     uint32_t SrcX, uint32_t SrcY,
+                                     uint32_t DstFb,
+                                     uint32_t DstX, uint32_t DstY,
+                                     uint32_t Width, uint32_t Height,
+                                     uint8_t interrupt)
+{
+  uint32_t ScreenW = BSP_LCD_GetXSize();
+  uint32_t SrcAddr, DstAddr;
+
+  if (!SrcFb || !DstFb || !Width || !Height ||
+      SrcX + Width > ScreenW || SrcY + Height > BSP_LCD_GetYSize() ||
+      DstX + Width > ScreenW || DstY + Height > BSP_LCD_GetYSize())
+  {
+    return LCD_ERROR;
+  }
+
+  SrcAddr = SrcFb + (((ScreenW * SrcY) + SrcX) * 2);
+  DstAddr = DstFb + (((ScreenW * DstY) + DstX) * 2);
+
+  hdma2d_eval.Instance              = DMA2D;
+  hdma2d_eval.Init.Mode             = DMA2D_M2M;
+  hdma2d_eval.Init.ColorMode        = DMA2D_RGB565;
+  hdma2d_eval.Init.OutputOffset     = ScreenW - Width;
+
+  hdma2d_eval.LayerCfg[1].AlphaMode      = DMA2D_NO_MODIF_ALPHA;
+  hdma2d_eval.LayerCfg[1].InputAlpha     = 0xFF;
+  hdma2d_eval.LayerCfg[1].InputColorMode = CM_RGB565;
+  hdma2d_eval.LayerCfg[1].InputOffset    = ScreenW - Width;
+
+  if (HAL_DMA2D_Init(&hdma2d_eval) != HAL_OK)            return LCD_ERROR;
+  if (HAL_DMA2D_ConfigLayer(&hdma2d_eval, 1) != HAL_OK)  return LCD_ERROR;
+
+  HAL_StatusTypeDef status;
+  if (interrupt)
+  {
+    status = HAL_DMA2D_Start_IT(
+      &hdma2d_eval, SrcAddr, DstAddr, Width, Height);
+  }
+  else
+  {
+    status = HAL_DMA2D_Start(
+      &hdma2d_eval, SrcAddr, DstAddr, Width, Height);
+  }
+  if (status != HAL_OK)
+  {
+    return LCD_ERROR;
+  }
+  if (!interrupt &&
+      HAL_DMA2D_PollForTransfer(&hdma2d_eval, 100) != HAL_OK)
+  {
+    return LCD_ERROR;
+  }
+
+  return LCD_OK;
+}
+
+uint8_t BSP_LCD_CopyRectEx_IT(uint32_t SrcFb, uint32_t SrcX, uint32_t SrcY,
+                              uint32_t DstFb, uint32_t DstX, uint32_t DstY,
+                              uint32_t Width, uint32_t Height)
+{
+  return BSP_LCD_CopyRectExMode(
+    SrcFb, SrcX, SrcY, DstFb, DstX, DstY, Width, Height, 1);
+}
+
+uint8_t BSP_LCD_CopyRectEx(uint32_t SrcFb, uint32_t SrcX, uint32_t SrcY,
+                           uint32_t DstFb, uint32_t DstX, uint32_t DstY,
+                           uint32_t Width, uint32_t Height)
+{
+  return BSP_LCD_CopyRectExMode(
+    SrcFb, SrcX, SrcY, DstFb, DstX, DstY, Width, Height, 0);
+}
 
 /**
   * @}
